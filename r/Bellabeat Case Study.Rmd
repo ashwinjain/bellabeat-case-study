@@ -1,0 +1,71 @@
+---
+title: "Bellabeat Case Study"
+author: "Ashwin Jain"
+date: "8/18/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Installing Packages
+
+For this, I've installed these packages
+
+'readxl', 'Rcpp', 'magrittr', 'dplyr'
+
+
+
+```{r install}
+library(readxl)
+library(Rcpp)
+library(magrittr)
+library(dplyr)
+```
+
+# Importing Data
+
+We first need to load in our data. It was downloaded as csv files which I then exported to Excel for visual purposes
+
+```{r import}
+dailyActivity_merged = read_excel("/Users/ashwinjain/Development/Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.xlsx")
+sleepDay_merged = read_excel("/Users/ashwinjain/Development/Fitabase Data 4.12.16-5.12.16/sleepDay_merged.xlsx")
+
+```
+
+# Cleaning Data
+
+## dailyActivity_merged
+
+We will first work with the dailyActivity_merged dataset
+
+```{r view dailyActivity_merged, echo=FALSE}
+
+knitr::kable(dailyActivity_merged[1:5, ], caption="Preview of dailyActivities_merged")
+
+col_before = colnames(dailyActivity_merged)
+```
+
+
+
+First, I deleted the SedentaryActiveDistance column - many of these entries had values over 0, which doesn't make sense because being sedentary and on the move are mutually exclusive
+
+
+```{r delete SedentaryActiveDistance}
+dailyActivity_merged <- select(dailyActivity_merged, -SedentaryActiveDistance)
+```
+
+
+List of columns before - 15 total
+```{r before, echo=FALSE}
+col_before
+```
+
+List of columns after - 14 total
+```{r after, echo=FALSE}
+colnames(dailyActivity_merged)
+```
+
+
+Second, I decided we should check for duplicated data and remove extras
