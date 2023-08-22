@@ -377,8 +377,8 @@ library(dplyr)</code></pre>
 <h1>Importing Data</h1>
 <p>We first need to load in our data. It was downloaded as csv files
 which I then exported to Excel for visual purposes</p>
-<pre class="r"><code>dailyActivity_merged = read_excel(&quot;/Users/ashwinjain/Development/Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.xlsx&quot;)
-sleepDay_merged = read_excel(&quot;/Users/ashwinjain/Development/Fitabase Data 4.12.16-5.12.16/sleepDay_merged.xlsx&quot;)</code></pre>
+<pre class="r"><code>dailyActivity_merged = read_excel(&quot;/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/dailyActivity_merged.xlsx&quot;)
+sleepDay_merged = read_excel(&quot;/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/sleepDay_merged.xlsx&quot;)</code></pre>
 </div>
 <div id="cleaning-data" class="section level1">
 <h1>Cleaning Data</h1>
@@ -511,11 +511,29 @@ sleepDay_merged = read_excel(&quot;/Users/ashwinjain/Development/Fitabase Data 4
 </tr>
 </tbody>
 </table>
-<p>First, I deleted the SedentaryActiveDistance column - many of these
+<p>First, check the sample size</p>
+<p>Second, I deleted the SedentaryActiveDistance column - many of these
 entries had values over 0, which doesn’t make sense because being
 sedentary and on the move are mutually exclusive</p>
+<p>Second, I decided we should check for duplicated data and remove
+extras</p>
+<pre class="r"><code>sum(duplicated(dailyActivity_merged) == TRUE)</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>The duplicated function outputs a list where the value of each indice
+in the list corresponds to whether that row is unique or not. The sum of
+all the TRUE values is 0, therefore, there are no duplicates</p>
+<p>Third, we should remove irrelevant data. There are few things to
+consider here. First, the SedentaryActiveDistance column - this does not
+matter as sedentary distance will always be zero.</p>
+<p>A few of the data points have sedentary distances greater than zero,
+which is an error.</p>
+<pre class="r"><code>sum(dailyActivity_merged$SedentaryActiveDistance &gt; 0)</code></pre>
+<pre><code>## [1] 82</code></pre>
+<p>As we can see, there are 82 days amoungst these individuals where the
+technology logged distance traveled while the person was moving, so it
+should be removed</p>
 <pre class="r"><code>dailyActivity_merged &lt;- select(dailyActivity_merged, -SedentaryActiveDistance)</code></pre>
-<p>List of columns before</p>
+<p>List of columns before - 15 total</p>
 <pre><code>##  [1] &quot;Id&quot;                       &quot;ActivityDate&quot;            
 ##  [3] &quot;TotalSteps&quot;               &quot;TotalDistance&quot;           
 ##  [5] &quot;TrackerDistance&quot;          &quot;LoggedActivitiesDistance&quot;
@@ -524,7 +542,7 @@ sedentary and on the move are mutually exclusive</p>
 ## [11] &quot;VeryActiveMinutes&quot;        &quot;FairlyActiveMinutes&quot;     
 ## [13] &quot;LightlyActiveMinutes&quot;     &quot;SedentaryMinutes&quot;        
 ## [15] &quot;Calories&quot;</code></pre>
-<p>List of columns after</p>
+<p>List of columns after - 14 total</p>
 <pre><code>##  [1] &quot;Id&quot;                       &quot;ActivityDate&quot;            
 ##  [3] &quot;TotalSteps&quot;               &quot;TotalDistance&quot;           
 ##  [5] &quot;TrackerDistance&quot;          &quot;LoggedActivitiesDistance&quot;
@@ -532,6 +550,34 @@ sedentary and on the move are mutually exclusive</p>
 ##  [9] &quot;LightActiveDistance&quot;      &quot;VeryActiveMinutes&quot;       
 ## [11] &quot;FairlyActiveMinutes&quot;      &quot;LightlyActiveMinutes&quot;    
 ## [13] &quot;SedentaryMinutes&quot;         &quot;Calories&quot;</code></pre>
+<p>Furthermore, there are many days where users logged 0 for all
+columns. This is likely because the user forgot to wear their
+technology. We are going to remove this from the table. However, we will
+store the data in a separate table, as it may prove useful later.</p>
+<p>I am checking for calories burned to be less than 1000. Barring
+medical conditions, it is near impossible to have a metabolic rate less
+than 1000 calories</p>
+<pre class="r"><code>not_worn = subset(dailyActivity_merged, Calories &lt; 1000)
+dailyActivity_merged &lt;- subset(dailyActivity_merged, Calories &gt; 1000)
+dailyActivity_merged</code></pre>
+<pre><code>## # A tibble: 928 × 14
+##            Id ActivityDate        TotalSteps TotalDistance TrackerDistance
+##         &lt;dbl&gt; &lt;dttm&gt;                   &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
+##  1 1503960366 2016-04-12 00:00:00      13162          8.5             8.5 
+##  2 1503960366 2016-04-13 00:00:00      10735          6.97            6.97
+##  3 1503960366 2016-04-14 00:00:00      10460          6.74            6.74
+##  4 1503960366 2016-04-15 00:00:00       9762          6.28            6.28
+##  5 1503960366 2016-04-16 00:00:00      12669          8.16            8.16
+##  6 1503960366 2016-04-17 00:00:00       9705          6.48            6.48
+##  7 1503960366 2016-04-18 00:00:00      13019          8.59            8.59
+##  8 1503960366 2016-04-19 00:00:00      15506          9.88            9.88
+##  9 1503960366 2016-04-20 00:00:00      10544          6.68            6.68
+## 10 1503960366 2016-04-21 00:00:00       9819          6.34            6.34
+## # ℹ 918 more rows
+## # ℹ 9 more variables: LoggedActivitiesDistance &lt;dbl&gt;, VeryActiveDistance &lt;dbl&gt;,
+## #   ModeratelyActiveDistance &lt;dbl&gt;, LightActiveDistance &lt;dbl&gt;,
+## #   VeryActiveMinutes &lt;dbl&gt;, FairlyActiveMinutes &lt;dbl&gt;,
+## #   LightlyActiveMinutes &lt;dbl&gt;, SedentaryMinutes &lt;dbl&gt;, Calories &lt;dbl&gt;</code></pre>
 </div>
 </div>
 
