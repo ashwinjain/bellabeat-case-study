@@ -359,7 +359,7 @@ display: none;
 <div id="installing-packages" class="section level2">
 <h2>Installing Packages</h2>
 <p>For this, I’ve installed these packages</p>
-<p>‘readxl’, ‘Rcpp’, ‘magrittr’, ‘dplyr’</p>
+<p>‘readxl’, ‘Rcpp’, ‘magrittr’, ‘dplyr’, ‘janitor’</p>
 <pre class="r"><code>library(readxl)
 library(Rcpp)
 library(magrittr)
@@ -372,19 +372,25 @@ library(dplyr)</code></pre>
 <pre><code>## The following objects are masked from &#39;package:base&#39;:
 ## 
 ##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(janitor)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;janitor&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     chisq.test, fisher.test</code></pre>
 </div>
 <div id="importing-data" class="section level1">
 <h1>Importing Data</h1>
 <p>We first need to load in our data. It was downloaded as csv files
 which I then exported to Excel for visual purposes</p>
-<pre class="r"><code>dailyActivity_merged = read_excel(&quot;/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/dailyActivity_merged.xlsx&quot;)
-sleepDay_merged = read_excel(&quot;/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/sleepDay_merged.xlsx&quot;)</code></pre>
+<pre class="r"><code>daily_activity = read_excel(&quot;/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/dailyActivity_merged.xlsx&quot;)
+daily_sleep = read_excel(&quot;/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/sleepDay_merged.xlsx&quot;)</code></pre>
 </div>
 <div id="cleaning-data" class="section level1">
 <h1>Cleaning Data</h1>
-<div id="dailyactivity_merged" class="section level2">
-<h2>dailyActivity_merged</h2>
-<p>We will first work with the dailyActivity_merged dataset</p>
+<div id="daily_activity" class="section level2">
+<h2>daily_activity</h2>
+<p>We will first work with the daily_activity dataset</p>
 <table>
 <caption>Preview of dailyActivities_merged</caption>
 <colgroup>
@@ -512,27 +518,41 @@ sleepDay_merged = read_excel(&quot;/Users/ashwinjain/Development/Personal/bellab
 </tbody>
 </table>
 <p>First, check the sample size</p>
+<pre class="r"><code>n_distinct(daily_activity$Id)</code></pre>
+<pre><code>## [1] 33</code></pre>
+<pre class="r"><code>n_distinct(daily_sleep$Id)</code></pre>
+<pre><code>## [1] 24</code></pre>
+<p>We see the sample size of daily activities is 33 and for daily sleep,
+it is 24. While this is lower than the reccomended 30, for our
+educational purposes, this is okay</p>
 <p>Second, I deleted the SedentaryActiveDistance column - many of these
 entries had values over 0, which doesn’t make sense because being
 sedentary and on the move are mutually exclusive</p>
 <p>Second, I decided we should check for duplicated data and remove
 extras</p>
-<pre class="r"><code>sum(duplicated(dailyActivity_merged) == TRUE)</code></pre>
+<pre class="r"><code>sum(duplicated(daily_activity) == TRUE)</code></pre>
 <pre><code>## [1] 0</code></pre>
+<pre class="r"><code>sum(duplicated(daily_sleep) == TRUE)</code></pre>
+<pre><code>## [1] 3</code></pre>
 <p>The duplicated function outputs a list where the value of each indice
 in the list corresponds to whether that row is unique or not. The sum of
 all the TRUE values is 0, therefore, there are no duplicates</p>
+<p>For the daily_sleep dataset however, there are 3 duplicates. We must
+reomve these duplicates as follows</p>
+<pre class="r"><code>daily_sleep &lt;- unique(daily_sleep)
+sum(duplicated(daily_sleep) == TRUE)</code></pre>
+<pre><code>## [1] 0</code></pre>
 <p>Third, we should remove irrelevant data. There are few things to
 consider here. First, the SedentaryActiveDistance column - this does not
 matter as sedentary distance will always be zero.</p>
 <p>A few of the data points have sedentary distances greater than zero,
 which is an error.</p>
-<pre class="r"><code>sum(dailyActivity_merged$SedentaryActiveDistance &gt; 0)</code></pre>
+<pre class="r"><code>sum(daily_activity$SedentaryActiveDistance &gt; 0)</code></pre>
 <pre><code>## [1] 82</code></pre>
 <p>As we can see, there are 82 days amoungst these individuals where the
 technology logged distance traveled while the person was moving, so it
 should be removed</p>
-<pre class="r"><code>dailyActivity_merged &lt;- select(dailyActivity_merged, -SedentaryActiveDistance)</code></pre>
+<pre class="r"><code>daily_activity &lt;- select(daily_activity, -SedentaryActiveDistance)</code></pre>
 <p>List of columns before - 15 total</p>
 <pre><code>##  [1] &quot;Id&quot;                       &quot;ActivityDate&quot;            
 ##  [3] &quot;TotalSteps&quot;               &quot;TotalDistance&quot;           
@@ -550,16 +570,17 @@ should be removed</p>
 ##  [9] &quot;LightActiveDistance&quot;      &quot;VeryActiveMinutes&quot;       
 ## [11] &quot;FairlyActiveMinutes&quot;      &quot;LightlyActiveMinutes&quot;    
 ## [13] &quot;SedentaryMinutes&quot;         &quot;Calories&quot;</code></pre>
-<p>Furthermore, there are many days where users logged 0 for all
-columns. This is likely because the user forgot to wear their
-technology. We are going to remove this from the table. However, we will
-store the data in a separate table, as it may prove useful later.</p>
+<p>Furthermore, there are many days where users logged 0 for many, if
+not all of the columns. This is likely because the user forgot to wear
+their technology. We are going to remove this from the table. However,
+we will store the data in a separate table, as it may prove useful
+later.</p>
 <p>I am checking for calories burned to be less than 1000. Barring
-medical conditions, it is near impossible to have a metabolic rate less
-than 1000 calories</p>
-<pre class="r"><code>not_worn = subset(dailyActivity_merged, Calories &lt; 1000)
-dailyActivity_merged &lt;- subset(dailyActivity_merged, Calories &gt; 1000)
-dailyActivity_merged</code></pre>
+medical conditions, it is impossible to have a metabolic rate less than
+1000 calories</p>
+<pre class="r"><code>not_worn = subset(daily_activity, Calories &lt; 1000)
+daily_activity &lt;- subset(daily_activity, Calories &gt; 1000)
+daily_activity</code></pre>
 <pre><code>## # A tibble: 928 × 14
 ##            Id ActivityDate        TotalSteps TotalDistance TrackerDistance
 ##         &lt;dbl&gt; &lt;dttm&gt;                   &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
@@ -578,6 +599,51 @@ dailyActivity_merged</code></pre>
 ## #   ModeratelyActiveDistance &lt;dbl&gt;, LightActiveDistance &lt;dbl&gt;,
 ## #   VeryActiveMinutes &lt;dbl&gt;, FairlyActiveMinutes &lt;dbl&gt;,
 ## #   LightlyActiveMinutes &lt;dbl&gt;, SedentaryMinutes &lt;dbl&gt;, Calories &lt;dbl&gt;</code></pre>
+<p>Rename columns</p>
+<p>We can then rename the columns for a more standardized format</p>
+<pre class="r"><code>clean_names(daily_activity)</code></pre>
+<pre><code>## # A tibble: 928 × 14
+##            id activity_date       total_steps total_distance tracker_distance
+##         &lt;dbl&gt; &lt;dttm&gt;                    &lt;dbl&gt;          &lt;dbl&gt;            &lt;dbl&gt;
+##  1 1503960366 2016-04-12 00:00:00       13162           8.5              8.5 
+##  2 1503960366 2016-04-13 00:00:00       10735           6.97             6.97
+##  3 1503960366 2016-04-14 00:00:00       10460           6.74             6.74
+##  4 1503960366 2016-04-15 00:00:00        9762           6.28             6.28
+##  5 1503960366 2016-04-16 00:00:00       12669           8.16             8.16
+##  6 1503960366 2016-04-17 00:00:00        9705           6.48             6.48
+##  7 1503960366 2016-04-18 00:00:00       13019           8.59             8.59
+##  8 1503960366 2016-04-19 00:00:00       15506           9.88             9.88
+##  9 1503960366 2016-04-20 00:00:00       10544           6.68             6.68
+## 10 1503960366 2016-04-21 00:00:00        9819           6.34             6.34
+## # ℹ 918 more rows
+## # ℹ 9 more variables: logged_activities_distance &lt;dbl&gt;,
+## #   very_active_distance &lt;dbl&gt;, moderately_active_distance &lt;dbl&gt;,
+## #   light_active_distance &lt;dbl&gt;, very_active_minutes &lt;dbl&gt;,
+## #   fairly_active_minutes &lt;dbl&gt;, lightly_active_minutes &lt;dbl&gt;,
+## #   sedentary_minutes &lt;dbl&gt;, calories &lt;dbl&gt;</code></pre>
+<pre class="r"><code>clean_names(daily_sleep)</code></pre>
+<pre><code>## # A tibble: 410 × 5
+##            id sleep_day           total_sleep_records total_minutes_asleep
+##         &lt;dbl&gt; &lt;dttm&gt;                            &lt;dbl&gt;                &lt;dbl&gt;
+##  1 1503960366 2016-04-12 00:00:00                   1                  327
+##  2 1503960366 2016-04-13 00:00:00                   2                  384
+##  3 1503960366 2016-04-15 00:00:00                   1                  412
+##  4 1503960366 2016-04-16 00:00:00                   2                  340
+##  5 1503960366 2016-04-17 00:00:00                   1                  700
+##  6 1503960366 2016-04-19 00:00:00                   1                  304
+##  7 1503960366 2016-04-20 00:00:00                   1                  360
+##  8 1503960366 2016-04-21 00:00:00                   1                  325
+##  9 1503960366 2016-04-23 00:00:00                   1                  361
+## 10 1503960366 2016-04-24 00:00:00                   1                  430
+## # ℹ 400 more rows
+## # ℹ 1 more variable: total_time_in_bed &lt;dbl&gt;</code></pre>
+<p>Merge daily sleep and daily activity</p>
+</div>
+<div id="todo" class="section level2">
+<h2>TODO</h2>
+<p>Maybe add the weight dataset just for the purposes of showing that
+the low metabolic rate is impossible for them analyze the not worn
+dataset</p>
 </div>
 </div>
 
