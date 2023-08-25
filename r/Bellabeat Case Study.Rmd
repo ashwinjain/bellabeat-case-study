@@ -121,9 +121,25 @@ We can then rename the columns for a more standardized format
 ```{r rename}
 clean_names(daily_activity)
 clean_names(daily_sleep)
+names(daily_activity) <- tolower(names(daily_activity))
+names(daily_sleep) <- tolower(names(daily_sleep))
+colnames(daily_activity)[2] = "date"
+colnames(daily_sleep)[2] = "date"
+glimpse(daily_activity)
+glimpse(daily_sleep)
 ```
 
+Typically, we would like to rename the date column to provide a consistent format. However, the date column is already formatted properly, so this step is redundant
+
+We next want to merge the daily_activity and daily_sleep columns by id and date. We must make sure both tables have the same column names for this.
+
+
 Merge daily sleep and daily activity
+```{r merge}
+daily_activity_sleep <- merge(daily_activity, daily_sleep, by=c ("id", "date"))
+daily_activity_sleep
+```
+
 
 
 
