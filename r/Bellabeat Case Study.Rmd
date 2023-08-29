@@ -15,8 +15,6 @@ For this, I've installed these packages
 
 'readxl', 'Rcpp', 'magrittr', 'dplyr', 'janitor'
 
-
-
 ```{r install}
 library(readxl)
 library(Rcpp)
@@ -48,6 +46,7 @@ col_before = colnames(daily_activity)
 ```
 
 First, check the sample size
+
 ```{r sample size}
 n_distinct(daily_activity$Id)
 n_distinct(daily_sleep$Id)
@@ -57,7 +56,6 @@ We see the sample size of daily activities is 33 and for daily sleep, it is 24. 
 
 Second, I deleted the SedentaryActiveDistance column - many of these entries had values over 0, which doesn't make sense because being sedentary and on the move are mutually exclusive
 
-
 Second, I decided we should check for duplicated data and remove extras
 
 ```{r dup}
@@ -65,7 +63,7 @@ sum(duplicated(daily_activity) == TRUE)
 sum(duplicated(daily_sleep) == TRUE)
 ```
 
-The duplicated function outputs a list where the value of each indice in the list corresponds to whether that row is unique or not. The sum of all the TRUE values is 0, therefore, there are no duplicates 
+The duplicated function outputs a list where the value of each indice in the list corresponds to whether that row is unique or not. The sum of all the TRUE values is 0, therefore, there are no duplicates
 
 For the daily_sleep dataset however, there are 3 duplicates. We must reomve these duplicates as follows
 
@@ -74,11 +72,9 @@ daily_sleep <- unique(daily_sleep)
 sum(duplicated(daily_sleep) == TRUE)
 ```
 
-
 Third, we should remove irrelevant data. There are few things to consider here. First, the SedentaryActiveDistance column - this does not matter as sedentary distance will always be zero.
 
 A few of the data points have sedentary distances greater than zero, which is an error.
-
 
 ```{r distance>0 d}
 sum(daily_activity$SedentaryActiveDistance > 0)
@@ -86,22 +82,21 @@ sum(daily_activity$SedentaryActiveDistance > 0)
 
 As we can see, there are 82 days amoungst these individuals where the technology logged distance traveled while the person was moving, so it should be removed
 
-
 ```{r delete SedentaryActiveDistance}
 daily_activity <- select(daily_activity, -SedentaryActiveDistance)
 ```
 
-
 List of columns before - 15 total
+
 ```{r before, echo=FALSE}
 col_before
 ```
 
 List of columns after - 14 total
+
 ```{r after, echo=FALSE}
 colnames(daily_activity)
 ```
-
 
 Furthermore, there are many days where users logged 0 for many, if not all of the columns. This is likely because the user forgot to wear their technology. We are going to remove this from the table. However, we will store the data in a separate table, as it may prove useful later.
 
@@ -112,7 +107,6 @@ not_worn = subset(daily_activity, Calories < 1000)
 daily_activity <- subset(daily_activity, Calories > 1000)
 daily_activity
 ```
-
 
 Rename columns
 
@@ -133,16 +127,33 @@ Typically, we would like to rename the date column to provide a consistent forma
 
 We next want to merge the daily_activity and daily_sleep columns by id and date. We must make sure both tables have the same column names for this.
 
-
 Merge daily sleep and daily activity
+
 ```{r merge}
 daily_activity_sleep <- merge(daily_activity, daily_sleep, by=c ("id", "date"))
 daily_activity_sleep
 ```
 
+# Processing Data
 
+The first step in processing data is understanding our subjects average behaviour. From the daily_activity_sleep table, we can extract average values for totalsteps, totaldistance, veryactivedistance, moderatelyactivedistance, lightactivedistance, veryactiveminutes, fairlyactiveminutes, lightlyactiveminutes, sedentaryminutes, calories, and totalminutesasleep
 
+We will source every variable from the daily_activity table, with the exception of totalminutesasleep, which we will obtain from the daily_sleep table
+
+```{r sum}
+daily_activity_grouped <- daily_activity %>%
++     group_by(id) %>% 
++     transmute(totalsteps=sum(totalsteps), totaldistance=sum(totaldistance), veryactivedistance = sum(veryactivedistance), moderatelyactivedistance = sum(moderatelyactivedistance), lightactivedistance=sum(lightactivedistance), veryactiveminutes=sum(veryactiveminutes), fairlyactiveminutes=sum(fairlyactiveminutes), lightlyactiveminutes=sum(lightlyactiveminutes), sedentaryminutes=sum(sedentaryminutes), calories=sum(calories))
+
+daily_activity_grouped <- unique(daily_activity_grouped)
+
+daily_sleep_grouped <- daily_sleep %>% group_by(id) %>% transmute(totalminutesasleep=sum(totalminutesasleep))
+
+daily_sleep_grouped <- unique(daily_sleep_grouped)
+daily_activity_sleep_grouped <- merge(daily_activity_grouped, daily_sleep_grouped, by=c ("id"))
+
+```
 
 ## TODO
-Maybe add the weight dataset just for the purposes of showing that the low metabolic rate is impossible for them
-analyze the not worn dataset
+
+Maybe add the weight dataset just for the purposes of showing that the low metabolic rate is impossible for them analyze the not worn dataset
