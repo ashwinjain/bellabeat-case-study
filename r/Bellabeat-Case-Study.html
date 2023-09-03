@@ -2711,6 +2711,89 @@ daily_activity_sleep</code></pre>
 ## 405                516            545
 ## 406                439            463</code></pre>
 </div>
+</div>
+<div id="processing-data" class="section level1">
+<h1>Processing Data</h1>
+<p>The first step in processing data is understanding our subjects
+average behaviour. From the daily_activity_sleep table, we can extract
+average values for totalsteps, totaldistance, veryactivedistance,
+moderatelyactivedistance, lightactivedistance, veryactiveminutes,
+fairlyactiveminutes, lightlyactiveminutes, sedentaryminutes, calories,
+and totalminutesasleep</p>
+<p>We will source every variable from the daily_activity table, with the
+exception of totalminutesasleep, which we will obtain from the
+daily_sleep table</p>
+<pre class="r"><code>daily_activity_grouped &lt;- daily_activity %&gt;% group_by(id) %&gt;% transmute(totalsteps=sum(totalsteps), totaldistance=sum(totaldistance), veryactivedistance = sum(veryactivedistance), moderatelyactivedistance = sum(moderatelyactivedistance), lightactivedistance=sum(lightactivedistance), veryactiveminutes=sum(veryactiveminutes), fairlyactiveminutes=sum(fairlyactiveminutes), lightlyactiveminutes=sum(lightlyactiveminutes), sedentaryminutes=sum(sedentaryminutes), calories=sum(calories))
+
+daily_sleep_grouped &lt;- daily_sleep %&gt;% group_by(id) %&gt;% transmute(totalminutesasleep=sum(totalminutesasleep))</code></pre>
+<p>We then need to get the total count of each id from both tables to
+determine the average</p>
+<pre class="r"><code>activityCount &lt;- table(daily_activity_grouped$id)
+sleepCount &lt;- table(daily_sleep_grouped$id)</code></pre>
+<p>Now we can get rid of duplicates and divide each row by its
+respective count</p>
+<pre class="r"><code>daily_activity_grouped &lt;- unique(daily_activity_grouped)
+daily_sleep_grouped &lt;- unique(daily_sleep_grouped)
+
+daily_activity_average &lt;- daily_activity_grouped
+daily_sleep_average &lt;- daily_sleep_grouped
+
+# obtain the average
+
+for (i in 1:nrow(daily_activity_grouped)) {
+  daily_activity_average[i, 2:ncol(daily_activity_grouped)] &lt;- daily_activity_grouped[i, 2:ncol(daily_activity_grouped)] / activityCount[i]
+}
+
+for (i in 1:nrow(daily_sleep_grouped)) {
+  daily_sleep_average[i, 2:ncol(daily_sleep_grouped)] &lt;- daily_sleep_grouped[i, 2:ncol(daily_sleep_grouped)] / sleepCount[i]
+}
+colnames(daily_activity_average)[2] = &quot;averagesteps&quot;
+colnames(daily_activity_average)[3] = &quot;averagedistance&quot;
+colnames(daily_sleep_average)[2] = &quot;averagesleep&quot;
+
+daily_activity_average</code></pre>
+<pre><code>## # A tibble: 33 × 11
+## # Groups:   id [33]
+##        id averagesteps averagedistance veryactivedistance moderatelyactivedist…¹
+##     &lt;dbl&gt;        &lt;dbl&gt;           &lt;dbl&gt;              &lt;dbl&gt;                  &lt;dbl&gt;
+##  1 1.50e9       12521.           8.07             2.95                    0.821 
+##  2 1.62e9        5744.           3.91             0.939                   0.361 
+##  3 1.64e9        7283.           5.30             0.730                   0.951 
+##  4 1.84e9        2666.           1.76             0.00867                 0.0507
+##  5 1.93e9         916.           0.635            0.0958                  0.0313
+##  6 2.02e9       11371.           8.08             2.42                    0.720 
+##  7 2.03e9        5567.           3.45             0.00613                 0.0113
+##  8 2.32e9        4717.           3.19             0.107                   0.0977
+##  9 2.35e9       10077.           6.73             1.12                    1.14  
+## 10 2.87e9        7556.           5.10             0.676                   0.276 
+## # ℹ 23 more rows
+## # ℹ abbreviated name: ¹​moderatelyactivedistance
+## # ℹ 6 more variables: lightactivedistance &lt;dbl&gt;, veryactiveminutes &lt;dbl&gt;,
+## #   fairlyactiveminutes &lt;dbl&gt;, lightlyactiveminutes &lt;dbl&gt;,
+## #   sedentaryminutes &lt;dbl&gt;, calories &lt;dbl&gt;</code></pre>
+<pre class="r"><code>daily_sleep_average</code></pre>
+<pre><code>## # A tibble: 24 × 2
+## # Groups:   id [24]
+##            id averagesleep
+##         &lt;dbl&gt;        &lt;dbl&gt;
+##  1 1503960366         360.
+##  2 1644430081         294 
+##  3 1844505072         652 
+##  4 1927972279         417 
+##  5 2026352035         506.
+##  6 2320127002          61 
+##  7 2347167796         447.
+##  8 3977333714         294.
+##  9 4020332650         349.
+## 10 4319703577         477.
+## # ℹ 14 more rows</code></pre>
+<pre class="r"><code>daily_activity_sleep_average &lt;- merge(daily_activity_average, daily_sleep_average, by=c (&quot;id&quot;))</code></pre>
+<p>daily_activity_sleep_grouped &lt;- merge(daily_activity_grouped,
+daily_sleep_grouped, by=c (“id”))</p>
+<p>head(daily_activity_sleep_grouped)</p>
+<p>```</p>
+<p>We want averages, so we need to determine the number of days each
+user logged</p>
 <div id="todo" class="section level2">
 <h2>TODO</h2>
 <p>Maybe add the weight dataset just for the purposes of showing that

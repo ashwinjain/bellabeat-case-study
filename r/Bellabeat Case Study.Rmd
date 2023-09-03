@@ -141,18 +141,54 @@ The first step in processing data is understanding our subjects average behaviou
 We will source every variable from the daily_activity table, with the exception of totalminutesasleep, which we will obtain from the daily_sleep table
 
 ```{r sum}
-daily_activity_grouped <- daily_activity %>%
-+     group_by(id) %>% 
-+     transmute(totalsteps=sum(totalsteps), totaldistance=sum(totaldistance), veryactivedistance = sum(veryactivedistance), moderatelyactivedistance = sum(moderatelyactivedistance), lightactivedistance=sum(lightactivedistance), veryactiveminutes=sum(veryactiveminutes), fairlyactiveminutes=sum(fairlyactiveminutes), lightlyactiveminutes=sum(lightlyactiveminutes), sedentaryminutes=sum(sedentaryminutes), calories=sum(calories))
-
-daily_activity_grouped <- unique(daily_activity_grouped)
+daily_activity_grouped <- daily_activity %>% group_by(id) %>% transmute(totalsteps=sum(totalsteps), totaldistance=sum(totaldistance), veryactivedistance = sum(veryactivedistance), moderatelyactivedistance = sum(moderatelyactivedistance), lightactivedistance=sum(lightactivedistance), veryactiveminutes=sum(veryactiveminutes), fairlyactiveminutes=sum(fairlyactiveminutes), lightlyactiveminutes=sum(lightlyactiveminutes), sedentaryminutes=sum(sedentaryminutes), calories=sum(calories))
 
 daily_sleep_grouped <- daily_sleep %>% group_by(id) %>% transmute(totalminutesasleep=sum(totalminutesasleep))
 
-daily_sleep_grouped <- unique(daily_sleep_grouped)
-daily_activity_sleep_grouped <- merge(daily_activity_grouped, daily_sleep_grouped, by=c ("id"))
+```
+
+We then need to get the total count of each id from both tables to determine the average
+
+```{r count}
+activityCount <- table(daily_activity_grouped$id)
+sleepCount <- table(daily_sleep_grouped$id)
 
 ```
+
+Now we can get rid of duplicates and divide each row by its respective count
+
+```{r compress}
+daily_activity_grouped <- unique(daily_activity_grouped)
+daily_sleep_grouped <- unique(daily_sleep_grouped)
+
+daily_activity_average <- daily_activity_grouped
+daily_sleep_average <- daily_sleep_grouped
+```
+
+``` {r average}
+# obtain the average
+
+for (i in 1:nrow(daily_activity_grouped)) {
+  daily_activity_average[i, 2:ncol(daily_activity_grouped)] <- daily_activity_grouped[i, 2:ncol(daily_activity_grouped)] / activityCount[i]
+}
+
+for (i in 1:nrow(daily_sleep_grouped)) {
+  daily_sleep_average[i, 2:ncol(daily_sleep_grouped)] <- daily_sleep_grouped[i, 2:ncol(daily_sleep_grouped)] / sleepCount[i]
+}
+```
+
+``` {r rename average}
+colnames(daily_activity_average)[2] = "averagesteps"
+colnames(daily_activity_average)[3] = "averagedistance"
+colnames(daily_sleep_average)[2] = "averagesleep"
+```
+
+```{r merge average}
+daily_activity_sleep_average <- merge(daily_activity_average, daily_sleep_average, by=c ("id"))
+head(daily_activity_sleep_grouped)
+```
+
+
 
 ## TODO
 
