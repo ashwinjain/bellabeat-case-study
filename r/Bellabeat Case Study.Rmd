@@ -20,6 +20,7 @@ library(readxl)
 library(Rcpp)
 library(magrittr)
 library(dplyr)
+library(ggplot2)
 library(janitor)
 ```
 
@@ -104,8 +105,8 @@ I am checking for calories burned to be less than 1000. Barring medical conditio
 
 ```{r notworn}
 not_worn = subset(daily_activity, Calories < 1000)
-daily_activity <- subset(daily_activity, Calories > 1000)
-daily_activity
+# daily_activity <- subset(daily_activity, Calories > 1000)
+# daily_activity
 ```
 
 Rename columns
@@ -185,11 +186,35 @@ colnames(daily_sleep_average)[2] = "averagesleep"
 
 ```{r merge average}
 daily_activity_sleep_average <- merge(daily_activity_average, daily_sleep_average, by=c ("id"))
-head(daily_activity_sleep_grouped)
+head(daily_activity_sleep_average)
+```
+We can test whether there is a correlation between average steps and calories burned. Ideally, if the users wore there device all the time, then there should yield a correlation.
+
+``` {r steps and calories}
+
+ggplot(daily_activity, aes(totalsteps, calories)) + geom_point()
+# res <- cor.test(daily_activity_sleep_average$averagesteps, daily_activity_sleep_average$calories, method = "pearson")
 ```
 
 
+We can see a low correlation coefficient of only 0.32, and we fail to reject the null hypothesis.
 
+
+
+
+
+
+
+Given this merged averaged dataset, we can extract a lot of information from this, the first of which should be classifying users based on activity level.
+
+```{r activity level}
+daily_activity_sleep_average$usertype = with(daily_activity_sleep_average, ifelse(averagesteps >= 10000, "very active", ifelse(averagesteps >= 7500, "fairly active", ifelse(averagesteps >= 5000, "lightly active", "sedentary"))))
+```
+
+I will create a new table that keeps track of user_type information
+
+
+## 1644430081
 ## TODO
 
 Maybe add the weight dataset just for the purposes of showing that the low metabolic rate is impossible for them analyze the not worn dataset
