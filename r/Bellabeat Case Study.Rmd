@@ -193,11 +193,53 @@ We can test whether there is a correlation between average steps and calories bu
 ``` {r steps and calories}
 
 ggplot(daily_activity, aes(totalsteps, calories)) + geom_point()
-# res <- cor.test(daily_activity_sleep_average$averagesteps, daily_activity_sleep_average$calories, method = "pearson")
+res <- cor.test(daily_activity$totalsteps, daily_activity$calories, method = "pearson")
 ```
 
 
-We can see a low correlation coefficient of only 0.32, and we fail to reject the null hypothesis.
+
+As we can see with a low p-value, we can reject the null hypothesis. We can see that the more steps someone takes, the more calories they burn. So now we need to figure out why people are not taking the amount of steps they should and motivate them to.
+
+Let's first examine when throughout the week people are taking their steps
+
+```{r hourly_steps day}
+hourly_steps = read_excel("/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/hourlySteps_merged.xlsx")
+hourly_steps$Weekday = weekdays(hourly_steps$ActivityHour)
+
+weekdays = unique(hourly_steps$Weekday)
+
+steps_per_day = c()
+
+for(day in weekdays) {
+  steps_per_day = append(steps_per_day, sum(subset(hourly_steps, Weekday == day)$StepTotal))
+}
+ 
+steps_per_day = data.frame(weekdays, steps_per_day)
+  
+steps_per_day
+```
+
+As we can see here, Sunday and Monday are the worst days for taking steps. 
+
+
+Lets take a look at when throughout the day people are taking their steps
+
+
+```{r hourly_steps hour}
+hourly_steps$Hour = format(as.POSIXct(hourly_steps$ActivityHour), format = "%H")
+
+hours = hourly_steps$Hour[1:24]
+
+steps_per_hour = c()
+
+for(hour in hours) {
+  steps_per_hour = append(steps_per_hour, sum(subset(hourly_steps, Hour == hour)$StepTotal))
+}
+ 
+steps_per_hour = data.frame(hours, steps_per_hour)
+  
+steps_per_hour
+```
 
 
 
