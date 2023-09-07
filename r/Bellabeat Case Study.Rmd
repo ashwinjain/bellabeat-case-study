@@ -132,7 +132,6 @@ Merge daily sleep and daily activity
 
 ```{r merge}
 daily_activity_sleep <- merge(daily_activity, daily_sleep, by=c ("id", "date"))
-daily_activity_sleep
 ```
 
 # Processing Data
@@ -216,10 +215,11 @@ for(day in weekdays) {
  
 steps_per_day = data.frame(weekdays, steps_per_day)
   
-steps_per_day
+barplot(steps_per_day$steps_per_day, xlab="Day of Week", ylab="Steps", main="Total Steps Per Day", names.arg = weekdays, col=c("red", "blue"))
+
 ```
 
-As we can see here, Sunday and Monday are the worst days for taking steps. 
+As we can see here, Sunday and Monday are the worst days for taking steps. Furthermore, there are less steps being taken as the week goes on. This could be a sign that people are consistent towardsd the beginning of the week.. maybe due to a small burst in motivation, yet they start to fall 
 
 
 Lets take a look at when throughout the day people are taking their steps
@@ -238,11 +238,9 @@ for(hour in hours) {
  
 steps_per_hour = data.frame(hours, steps_per_hour)
   
-steps_per_hour
+barplot(steps_per_hour$steps_per_hour, xlab="Hour", ylab="Steps", main="Total Steps Per Hour", names.arg = hours, col=c("red", "blue"))
 ```
-
-
-
+As expected, the step counts conform to the typical waking hours
 
 
 
