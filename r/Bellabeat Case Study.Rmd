@@ -252,7 +252,7 @@ heartrate_per_hour = data.frame(hour=heartrate_seconds$Hour, heartrate=heartrate
 heartrate_combined = c()
 
 for (h in hours) {
-    heartrate_combined = append(heartrate_combined, sum(subset(heartrate_per_hour, heartrate_per_hour$hour=h)$heartrate))
+    heartrate_combined = append(heartrate_combined, sum(subset(heartrate_per_hour, hour=h)$heartrate))
 }
 
 
