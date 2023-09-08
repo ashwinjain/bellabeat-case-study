@@ -5,17 +5,11 @@ date: "8/18/2023"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+### Installing Packages
 
-## Installing Packages
+For this, I've installed the following packages
 
-For this, I've installed these packages
-
-'readxl', 'Rcpp', 'magrittr', 'dplyr', 'janitor'
-
-```{r install}
+```{r install, echo="FALSE"}
 library(readxl)
 library(Rcpp)
 library(magrittr)
@@ -31,6 +25,7 @@ We first need to load in our data. It was downloaded as csv files which I then e
 ```{r import}
 daily_activity = read_excel("/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/dailyActivity_merged.xlsx")
 daily_sleep = read_excel("/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/sleepDay_merged.xlsx")
+heartrate_seconds = read_excel("/Users/ashwinjain/Development/Personal/bellabeat-case-study/data/heartrate_seconds_merged.xlsx")
 ```
 
 # Cleaning Data
@@ -242,6 +237,31 @@ barplot(steps_per_hour$steps_per_hour, xlab="Hour", ylab="Steps", main="Total St
 ```
 As expected, the step counts conform to the typical waking hours
 
+Something I do notice though is that around 2 PM - 5PM, there is a big dropoff in steps being taken. For me personally, this is typically associated with a midday nap. Let's compare this to sleep schedules to see if this is true.
+
+
+We have the heartrate_seconds table, and from this, we can create a new table that has an hour column and a heartrate column
+
+
+
+
+``` {r heartrate}
+heartrate_seconds$Hour = format(as.POSIXct(heartrate_seconds$Time), format = "%H")
+heartrate_per_hour = data.frame(hour=heartrate_seconds$Hour, heartrate=heartrate_seconds$Value)
+
+heartrate_combined = c()
+
+for (h in hours) {
+    heartrate_combined = append(heartrate_combined, sum(subset(heartrate_per_hour, heartrate_per_hour$hour=h)$heartrate))
+}
+
+
+heartrate_combined = data.frame(hours, heartrate_combined)
+
+heartrate_combined
+
+
+```
 
 
 
