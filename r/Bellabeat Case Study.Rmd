@@ -252,7 +252,10 @@ heartrate_per_hour = data.frame(hour=heartrate_seconds$Hour, heartrate=heartrate
 heartrate_combined = c()
 
 for (h in hours) {
-    heartrate_combined = append(heartrate_combined, sum(subset(heartrate_per_hour, hour=h)$heartrate))
+  add_column = subset(heartrate_per_hour, hour==h)
+  count = nrow(add_column)
+  average = sum(add_column$heartrate)/count
+  heartrate_combined = append(heartrate_combined, average)
 }
 
 
@@ -260,9 +263,16 @@ heartrate_combined = data.frame(hours, heartrate_combined)
 
 heartrate_combined
 
+barplot(heartrate_combined$heartrate_combined, xlab="Hour", ylab="Total Heartrate", main="Average Heartrate by Hour", names.arg = hours, col=c("red", "blue"))
+
 
 ```
 
+Let's examine why people aren't taking as many steps on certain days by checking how much they are using their smartdevice.
+
+
+
+Based on this chart, it seems like heartrate levels are fairly normal relative to other hours around 2-5. This likely means people are not asleep, but for some reason are not getting steps in during this time.
 
 
 Given this merged averaged dataset, we can extract a lot of information from this, the first of which should be classifying users based on activity level.
@@ -274,7 +284,9 @@ daily_activity_sleep_average$usertype = with(daily_activity_sleep_average, ifels
 I will create a new table that keeps track of user_type information
 
 
-## 1644430081
-## TODO
+## Conclusion
 
-Maybe add the weight dataset just for the purposes of showing that the low metabolic rate is impossible for them analyze the not worn dataset
+With the data presented, there are a few reccomendations.
+
+
+1. End of week reminders to reach daily step goal. Towards the end of the week and weekend, people seem to take less steps
